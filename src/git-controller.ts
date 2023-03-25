@@ -33,8 +33,7 @@ export default class githubApiController {
                 this.githubService.getRepoActiveWebHooks(owner, repo),
             ]);
 
-            const [repository, contentData, active_webhooks] =
-                await repoRequests;
+            const [repository, contentData, active_webhooks] = await repoRequests;
             const repoDetails = {
                 owner,
                 name: repo,

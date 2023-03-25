@@ -26,14 +26,11 @@ app.use(
     expressMiddleware(server, {
         context: async ({ req }) => ({
             dataSources: {
-                githubController: new githubController(
-                    req.headers.token as string
-                ),
+                githubController: new githubController(req.headers.token as string),
             },
         }),
     })
 );
-
 
 httpServer.listen({ port: 4000 }, () => {
     console.log(`🚀 Server ready at http://localhost:4000/`);

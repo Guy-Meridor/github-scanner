@@ -9,7 +9,7 @@ export default class GithubAccess {
         this.token = token;
     }
 
-    get headers() : Object {
+    get headers(): Object {
         return {
             Authorization: `Bearer ${this.token}`,
             Accept: "application/vnd.github+json",
@@ -27,21 +27,15 @@ export default class GithubAccess {
     }
 
     async getRepo(owner: string, repo: string) {
-        return this.#base_get_request(
-            `${base_github_url}/repos/${owner}/${repo}`,
-            {
-                headers: this.headers,
-            }
-        );
+        return this.#base_get_request(`${base_github_url}/repos/${owner}/${repo}`, {
+            headers: this.headers,
+        });
     }
 
     async getRepoActiveWebHooks(owner: string, repo: string) {
-        return this.#base_get_request(
-            `${base_github_url}/repos/${owner}/${repo}/hooks`,
-            {
-                headers: this.headers,
-            }
-        );
+        return this.#base_get_request(`${base_github_url}/repos/${owner}/${repo}/hooks`, {
+            headers: this.headers,
+        });
     }
 
     async getFile(download_url: string) {

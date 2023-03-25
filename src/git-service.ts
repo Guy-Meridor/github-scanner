@@ -12,49 +12,44 @@ export default class GithubService {
     }
 
     async getRepoActiveWebHooks(owner: string, repo: string) {
-        const webhooks = await this.githubAccess.getRepoActiveWebHooks(
-            owner,
-            repo
-        );
+        const webhooks = await this.githubAccess.getRepoActiveWebHooks(owner, repo);
         const active_webhooks = webhooks.filter((webhook) => webhook.active);
         const webhooks_names = active_webhooks.map((webhook) => webhook.name);
         return webhooks_names;
     }
 
     async #repoFileScan(owner: string, repo: string, path: string = "") {
-        const subfolders = [];
+        const recursiveFileScan = async (owner, repo, path = "") => {
+            const subfolders = [];
 
-        const contents = await this.githubAccess.getRepoContents(
-            owner,
-            repo,
-            path
-        );
+            const contents = await this.githubAccess.getRepoContents(owner, repo, path);
 
-        contents.forEach((content) => {
-            switch (content.type) {
-                case "file":
-                    this.eventManager.emit(
-                        EventManager.FILE_FOUND_EVENT_KEY,
-                        content
-                    );
-                    break;
-                case "dir":
-                    subfolders.push(content.path);
-                    break;
-            }
-        });
+            contents.forEach((content) => {
+                switch (content.type) {
+                    case "file":
+                        this.eventManager.emit(
+                            EventManager.FILE_FOUND_EVENT_KEY,
+                            content
+                        );
+                        break;
+                    case "dir":
+                        subfolders.push(content.path);
+                        break;
+                }
+            });
 
-        return Promise.all(
-            subfolders.map((subfolderPath) =>
-                this.#repoFileScan(owner, repo, subfolderPath)
-            )
-        );
+            return Promise.all(
+                subfolders.map((subfolderPath) =>
+                    recursiveFileScan(owner, repo, subfolderPath)
+                )
+            );
+        };
+
+        return repoScanLimiter(() => recursiveFileScan(owner, repo, path));
     }
 
     async getRepoContentData(owner: string, repo: string) {
-        const scanPromise = repoScanLimiter(() =>
-            this.#repoFileScan(owner, repo)
-        );
+        const scanPromise = this.#repoFileScan(owner, repo);
         const scanResults = {
             number_of_files: 0,
             file_content: null,
@@ -64,10 +59,7 @@ export default class GithubService {
             scanResults.number_of_files += 1;
         }
 
-        this.eventManager.on(
-            EventManager.FILE_FOUND_EVENT_KEY,
-            countFileListener
-        );
+        this.eventManager.on(EventManager.FILE_FOUND_EVENT_KEY, countFileListener);
 
         async function fileSearchListener(file) {
             if (file.name.endsWith(".yml")) {
